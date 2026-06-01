@@ -27,10 +27,29 @@ class PerformanceTracker:
 
     def _calculate_cost(self, model: str, usage: Dict[str, int]) -> float:
         """
-        TODO: Implement real pricing logic.
-        For now, returns a dummy constant.
+        Calculates the actual cost based on model and token usage.
+        Pricing is based on standard rates per 1M tokens (converted to per token).
         """
-        return (usage.get("total_tokens", 0) / 1000) * 0.01
+        pricing = {
+            "gpt-4o": [5.00, 15.00],
+            "gpt-4o-mini": [0.150, 0.600],
+            "gpt-3.5-turbo": [0.50, 1.50],
+            "gemini-1.5-pro": [3.50, 10.50],
+            "gemini-1.5-flash": [0.075, 0.30],
+            "gemini-2.0-flash": [0.075, 0.30],
+            "gemini-2.5-flash": [0.075, 0.30],
+            "gemini-flash-latest": [0.075, 0.30],
+            "gemini-pro-latest": [3.50, 10.50],
+        }
+
+        # Default fallback pricing (GPT-3.5 tier)
+        rates = pricing.get(model.lower(), [0.50, 1.50])
+        
+        prompt_tokens = usage.get("prompt_tokens", 0)
+        completion_tokens = usage.get("completion_tokens", 0)
+        
+        cost = (prompt_tokens * rates[0] / 1_000_000) + (completion_tokens * rates[1] / 1_000_000)
+        return round(cost, 6)
 
 # Global tracker instance
 tracker = PerformanceTracker()

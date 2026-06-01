@@ -1,7 +1,6 @@
 import time
 import os
 from typing import Dict, Any, Optional, Generator
-from llama_cpp import Llama
 from src.core.llm_provider import LLMProvider
 
 class LocalProvider(LLMProvider):
@@ -10,6 +9,13 @@ class LocalProvider(LLMProvider):
     Optimized for CPU usage with GGUF models.
     """
     def __init__(self, model_path: str, n_ctx: int = 4096, n_threads: Optional[int] = None):
+        try:
+            from llama_cpp import Llama
+        except ImportError:
+            raise ImportError(
+                "llama-cpp-python is not installed. To run local models, please install it "
+                "using: pip install llama-cpp-python"
+            )
         """
         Initialize the local Llama model.
         Args:
