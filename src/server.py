@@ -44,7 +44,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 async def get_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html", context={"request": request})
 
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatRequest):
