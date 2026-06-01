@@ -1,4 +1,4 @@
-def get_discount(coupon_code: str) -> float:
+def get_discount(coupon_code: str = None) -> float:
     """
     Checks the discount percentage for a given coupon code.
     

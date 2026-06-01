@@ -30,13 +30,16 @@ class PerformanceTracker:
         Calculates the actual cost based on model and token usage.
         Pricing is based on standard rates per 1M tokens (converted to per token).
         """
-        # Pricing table (Price per 1M tokens: [Input, Output])
         pricing = {
             "gpt-4o": [5.00, 15.00],
             "gpt-4o-mini": [0.150, 0.600],
             "gpt-3.5-turbo": [0.50, 1.50],
             "gemini-1.5-pro": [3.50, 10.50],
             "gemini-1.5-flash": [0.075, 0.30],
+            "gemini-2.0-flash": [0.075, 0.30],
+            "gemini-2.5-flash": [0.075, 0.30],
+            "gemini-flash-latest": [0.075, 0.30],
+            "gemini-pro-latest": [3.50, 10.50],
         }
 
         # Default fallback pricing (GPT-3.5 tier)

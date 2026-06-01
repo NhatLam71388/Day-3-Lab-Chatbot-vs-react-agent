@@ -134,7 +134,73 @@ Final Answer: your final response to the user.
         return result
 
     def _parse_action_str(self, action_str: str):
-        """Simple regex to extract tool name and kwargs from Action: tool_name(arg='val')"""
+        """
+        Parses action string. Tries to use AST parsing first (robust for positional, mixed, and unquoted args),
+        and falls back to simple regex matching if AST fails.
+        """
+        action_str = action_str.strip()
+        # Find matching tool func if any to map positional args
+        match = re.search(r"^(\w+)\(", action_str)
+        tool_func = None
+        if match:
+            tool_name = match.group(1)
+            for t in self.tools:
+                if t['name'] == tool_name:
+                    tool_func = t['func']
+                    break
+        
+        # Try AST parsing
+        try:
+            import ast
+            import inspect
+            
+            tree = ast.parse(action_str)
+            if tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Call):
+                call_node = tree.body[0].value
+                if isinstance(call_node.func, ast.Name):
+                    t_name = call_node.func.id
+                    args = {}
+                    
+                    # Parse keywords
+                    for kw in call_node.keywords:
+                        val = None
+                        if hasattr(kw.value, 'value') and not isinstance(kw.value, ast.Name):
+                            val = kw.value.value
+                        elif isinstance(kw.value, ast.Num):
+                            val = kw.value.n
+                        elif isinstance(kw.value, ast.Str):
+                            val = kw.value.s
+                        elif isinstance(kw.value, ast.NameConstant):
+                            val = kw.value.value
+                        elif isinstance(kw.value, ast.Name):
+                            val = kw.value.id
+                        args[kw.arg] = val
+                    
+                    # Parse positional args if tool_func is available
+                    if call_node.args and tool_func:
+                        sig = inspect.signature(tool_func)
+                        param_names = list(sig.parameters.keys())
+                        for idx, arg_node in enumerate(call_node.args):
+                            if idx < len(param_names):
+                                param_name = param_names[idx]
+                                val = None
+                                if hasattr(arg_node, 'value') and not isinstance(arg_node, ast.Name):
+                                    val = arg_node.value
+                                elif isinstance(arg_node, ast.Num):
+                                    val = arg_node.n
+                                elif isinstance(arg_node, ast.Str):
+                                    val = arg_node.s
+                                elif isinstance(arg_node, ast.NameConstant):
+                                    val = arg_node.value
+                                elif isinstance(arg_node, ast.Name):
+                                    val = arg_node.id
+                                args[param_name] = val
+                                
+                    return t_name, args
+        except Exception:
+            pass # Fall back to regex parsing
+
+        # Regex fallback
         match = re.search(r"(\w+)\((.*)\)", action_str)
         if not match:
             return None, {}
@@ -142,13 +208,13 @@ Final Answer: your final response to the user.
         tool_name = match.group(1)
         args_str = match.group(2)
         
-        # Simple extraction of keyword arguments
         args = {}
         if args_str:
-            # Matches key='value' or key=value
-            arg_pairs = re.findall(r"(\w+)\s*=\s*['\"]?([^'\"]*)['\"]?", args_str)
-            for k, v in arg_pairs:
-                args[k] = v
+            arg_pairs = re.findall(r"(\w+)\s*=\s*(?:['\"]([^'\"]*)['\"]|([^,\s'\"]+))", args_str)
+            for match_pair in arg_pairs:
+                key = match_pair[0]
+                val = match_pair[1] if match_pair[1] else match_pair[2]
+                args[key] = val
         return tool_name, args
 
     def _execute_tool(self, tool_name: str, args: Dict[str, Any]) -> str:

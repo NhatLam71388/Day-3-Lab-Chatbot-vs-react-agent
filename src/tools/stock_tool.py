@@ -1,4 +1,4 @@
-def check_stock(item_name: str) -> int:
+def check_stock(item_name: str = None) -> int:
     """
     Checks the available stock quantity for a given item in the e-commerce store.
     

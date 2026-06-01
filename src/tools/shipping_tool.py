@@ -1,4 +1,4 @@
-def calc_shipping(weight: float, destination: str) -> float:
+def calc_shipping(weight: float, destination: str = None) -> float:
     """
     Calculates the shipping cost based on the weight of the parcel and destination city.
     
